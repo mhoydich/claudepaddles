@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pickleball Paddle Selector</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --secondary: #10b981;
+      --danger: #ef4444;
+      --background: #f8fafc;
+      --surface: #ffffff;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --border: #e2e8f0;
+      --shadow: 0 1px 3px rgba(0,0,0,0.1);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,0.15);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: var(--background); color: var(--text); line-height: 1.6; }
+    .header { background: linear-gradient(135deg, var(--primary-dark), var(--primary)); color: white; padding: 2rem; text-align: center; }
+    .header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .tagline { opacity: 0.9; }
+    .toolbar { background: var(--surface); padding: 1rem 2rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .search-input { flex: 1; min-width: 200px; padding: 0.75rem 1rem; border: 2px solid var(--border); border-radius: var(--radius); font-size: 1rem; }
+    .search-input:focus { outline: none; border-color: var(--primary); }
+    .quiz-btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, var(--secondary), #059669); color: white; border: none; border-radius: var(--radius); font-size: 1rem; font-weight: 600; cursor: pointer; }
+    .quiz-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+    select { padding: 0.75rem 1rem; border: 2px solid var(--border); border-radius: var(--radius); font-size: 0.9rem; background: white; cursor: pointer; }
+    .main { max-width: 1400px; margin: 0 auto; padding: 2rem; display: flex; gap: 2rem; }
+    .sidebar { width: 280px; flex-shrink: 0; }
+    .filter-panel { background: var(--surface); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); position: sticky; top: 80px; max-height: calc(100vh - 100px); overflow-y: auto; }
+    .filter-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+    .filter-header h2 { font-size: 1.1rem; }
+    .reset-btn { padding: 0.4rem 0.8rem; background: var(--background); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.8rem; cursor: pointer; }
+    .filter-section { margin-bottom: 1.25rem; }
+    .filter-section h3 { font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-light); text-transform: uppercase; }
+    .checkbox-group { display: flex; flex-direction: column; gap: 0.4rem; max-height: 150px; overflow-y: auto; }
+    .checkbox-label { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.85rem; }
+    .checkbox-label input { width: 16px; height: 16px; accent-color: var(--primary); }
+    .content { flex: 1; }
+    .results-count { margin-bottom: 1rem; color: var(--text-light); font-size: 0.9rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+    .card { background: var(--surface); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+    .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+    .card-img { height: 160px; display: flex; align-items: center; justify-content: center; position: relative; }
+    .card-img svg { width: 70px; height: 100px; }
+    .brand-tag { position: absolute; top: 0.5rem; left: 0.5rem; background: rgba(0,0,0,0.5); color: white; padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 600; }
+    .card-info { padding: 1rem; }
+    .card-name { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .card-price { font-size: 1.15rem; font-weight: 700; color: var(--primary); margin-bottom: 0.75rem; }
+    .stats { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.75rem; }
+    .stat { display: flex; align-items: center; gap: 0.5rem; }
+    .stat-label { width: 50px; font-size: 0.7rem; color: var(--text-light); }
+    .stat-bar { flex: 1; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+    .stat-fill { height: 100%; border-radius: 3px; }
+    .stat-fill.power { background: linear-gradient(90deg, #ef4444, #f87171); }
+    .stat-fill.control { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+    .stat-fill.spin { background: linear-gradient(90deg, #10b981, #34d399); }
+    .stat-val { width: 18px; font-size: 0.7rem; font-weight: 600; text-align: right; }
+    .tags { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.5rem; }
+    .tag { padding: 0.2rem 0.6rem; background: var(--background); border-radius: 20px; font-size: 0.7rem; color: var(--text-light); }
+    .specs { display: flex; gap: 0.75rem; font-size: 0.75rem; color: var(--text-light); }
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+    .modal { background: var(--surface); border-radius: var(--radius); max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; }
+    .modal-close { position: absolute; top: 1rem; right: 1rem; width: 32px; height: 32px; border: none; background: rgba(0,0,0,0.1); border-radius: 50%; font-size: 1.25rem; cursor: pointer; z-index: 10; }
+    .modal-header { display: flex; gap: 1.5rem; padding: 1.5rem; border-bottom: 1px solid var(--border); }
+    .modal-img { width: 100px; height: 130px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .modal-img svg { width: 70px; height: 100px; color: white; }
+    .modal-title { flex: 1; }
+    .modal-brand { display: inline-block; padding: 0.2rem 0.6rem; background: var(--primary); color: white; border-radius: 20px; font-size: 0.75rem; font-weight: 600; margin-bottom: 0.5rem; }
+    .modal-title h2 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+    .modal-price { font-size: 1.25rem; font-weight: 700; color: var(--primary); }
+    .modal-body { padding: 1.5rem; }
+    .modal-desc { color: var(--text-light); margin-bottom: 1.5rem; line-height: 1.7; }
+    .modal-section { margin-bottom: 1.5rem; }
+    .modal-section h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem; }
+    .stats-grid { display: flex; flex-direction: column; gap: 0.75rem; }
+    .stat-row { display: flex; align-items: center; gap: 1rem; }
+    .stat-name { width: 60px; font-weight: 500; font-size: 0.9rem; }
+    .stat-bar-lg { flex: 1; height: 10px; background: var(--border); border-radius: 5px; overflow: hidden; }
+    .stat-num { width: 40px; text-align: right; font-weight: 600; font-size: 0.9rem; }
+    .specs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+    .spec-item { background: var(--background); padding: 0.75rem; border-radius: var(--radius-sm); }
+    .spec-label { display: block; font-size: 0.75rem; color: var(--text-light); margin-bottom: 0.2rem; }
+    .spec-value { font-weight: 600; font-size: 0.9rem; }
+    .tags-lg { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .tag-lg { padding: 0.3rem 0.8rem; background: var(--background); border-radius: 20px; font-size: 0.8rem; }
+    .tag-skill { background: var(--primary); color: white; }
+    .features-list { list-style: none; }
+    .features-list li { padding: 0.5rem 0.75rem; background: var(--background); border-radius: var(--radius-sm); margin-bottom: 0.5rem; font-size: 0.9rem; }
+    .features-list li::before { content: "✓ "; color: var(--secondary); font-weight: bold; }
+    .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .pros h3 { color: var(--secondary); }
+    .cons h3 { color: var(--danger); }
+    .pros ul, .cons ul { list-style: none; }
+    .pros li, .cons li { padding: 0.4rem 0; font-size: 0.9rem; }
+    .pros li::before { content: "+ "; color: var(--secondary); font-weight: bold; }
+    .cons li::before { content: "- "; color: var(--danger); font-weight: bold; }
+    .quiz-modal { max-width: 550px; padding: 2rem; }
+    .quiz-progress { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .progress-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
+    .progress-dot.active { background: var(--primary); transform: scale(1.2); }
+    .progress-dot.done { background: var(--secondary); }
+    .quiz-modal h2 { text-align: center; margin-bottom: 1.5rem; font-size: 1.25rem; }
+    .quiz-options { display: flex; flex-direction: column; gap: 0.75rem; }
+    .quiz-opt { display: flex; flex-direction: column; align-items: flex-start; padding: 1rem; background: var(--background); border: 2px solid var(--border); border-radius: var(--radius); cursor: pointer; text-align: left; }
+    .quiz-opt:hover { border-color: var(--primary); background: white; }
+    .opt-label { font-weight: 600; margin-bottom: 0.2rem; }
+    .opt-desc { font-size: 0.85rem; color: var(--text-light); }
+    .quiz-back { margin-top: 1rem; padding: 0.5rem 1rem; background: none; border: none; color: var(--text-light); cursor: pointer; }
+    .quiz-results h2 { text-align: center; margin-bottom: 0.5rem; }
+    .quiz-subtitle { text-align: center; color: var(--text-light); margin-bottom: 1.5rem; }
+    .rec-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .rec-card { display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--background); border-radius: var(--radius); cursor: pointer; border: 2px solid transparent; }
+    .rec-card:hover { border-color: var(--primary); background: white; }
+    .rec-rank { font-size: 1.25rem; font-weight: 700; color: var(--primary); width: 30px; }
+    .rec-img { width: 40px; height: 55px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+    .rec-img svg { width: 28px; height: 40px; color: white; }
+    .rec-info { flex: 1; }
+    .rec-brand { font-size: 0.7rem; color: var(--text-light); text-transform: uppercase; }
+    .rec-info h3 { font-size: 0.9rem; margin-bottom: 0.1rem; }
+    .rec-price { font-weight: 600; color: var(--primary); font-size: 0.85rem; }
+    .rec-stats { display: flex; gap: 0.75rem; }
+    .mini-stat { text-align: center; }
+    .mini-stat span { display: block; font-size: 0.65rem; color: var(--text-light); }
+    .mini-stat strong { font-size: 0.95rem; }
+    .quiz-restart { display: block; width: 100%; margin-top: 1rem; padding: 0.75rem; background: var(--background); border: 2px solid var(--border); border-radius: var(--radius); cursor: pointer; }
+    .quiz-restart:hover { border-color: var(--primary); }
+    .no-results { text-align: center; padding: 3rem; background: var(--surface); border-radius: var(--radius); }
+    .no-results p { margin-bottom: 1rem; color: var(--text-light); }
+    .no-results button { padding: 0.75rem 1.5rem; background: var(--primary); color: white; border: none; border-radius: var(--radius); cursor: pointer; }
+    @media (max-width: 900px) {
+      .sidebar { display: none; }
+      .main { padding: 1rem; }
+    }
+    @media (max-width: 600px) {
+      .header h1 { font-size: 1.5rem; }
+      .toolbar { padding: 0.75rem; }
+      .grid { grid-template-columns: 1fr; }
+      .modal-header { flex-direction: column; align-items: center; text-align: center; }
+      .specs-grid, .pros-cons { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    const paddles = [
+      {id:'joola-ben-johns-hyperion-cfs-16',name:'Ben Johns Hyperion CFS 16',brand:'JOOLA',price:249.99,weight:8.0,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Elongated',gripLength:5.5,gripCircumference:4.125,power:8,control:9,spin:9,sweetSpot:'Large',playStyle:['Control','Spin','All-Around'],skillLevel:['Advanced','Pro'],features:['Carbon Friction Surface','Reactive Honeycomb Core','Hyperfoam Edge Wall','Aero Curve Head'],description:'The signature paddle of #1 ranked Ben Johns. Features the revolutionary Carbon Friction Surface for maximum spin potential and the Reactive Honeycomb polymer core for exceptional feel and power.',pros:['Exceptional spin generation','Great control at the net','Large sweet spot','Used by the #1 player'],cons:['Premium price point','May be too advanced for beginners'],color:'#1e3a5f'},
+      {id:'joola-ben-johns-hyperion-cfs-14',name:'Ben Johns Hyperion CFS 14',brand:'JOOLA',price:249.99,weight:8.2,coreThickness:14,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Elongated',gripLength:5.5,gripCircumference:4.125,power:9,control:8,spin:9,sweetSpot:'Medium',playStyle:['Power','Spin','Aggressive'],skillLevel:['Advanced','Pro'],features:['Carbon Friction Surface','Reactive Honeycomb Core','Hyperfoam Edge Wall','Thinner Core for Power'],description:'The power-focused version of Ben Johns signature paddle with a thinner 14mm core for increased pop and drive capabilities while maintaining excellent spin.',pros:['More power than 16mm version','Excellent for drives','Great spin retention'],cons:['Smaller sweet spot','Less forgiving on mishits'],color:'#2d4a6f'},
+      {id:'joola-anna-leigh-waters-hyperion-cgs-16',name:'Anna Leigh Waters Hyperion CGS 16',brand:'JOOLA',price:249.99,weight:7.8,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Standard',gripLength:5.25,gripCircumference:4.0,power:7,control:10,spin:9,sweetSpot:'Extra Large',playStyle:['Control','Touch','Defensive'],skillLevel:['Intermediate','Advanced','Pro'],features:['Carbon Grip Surface','Sure-Grip Texture','Optimized Weight Distribution','Response Polymer Core'],description:'Designed with Anna Leigh Waters, this paddle excels in control and touch with its unique Carbon Grip Surface texture optimized for consistent spin and feel.',pros:['Unmatched control','Perfect for soft game','Lighter weight for quick hands'],cons:['Less power for drives','May lack pop for aggressive players'],color:'#4a90a4'},
+      {id:'joola-scorpeus-cfs-16',name:'Scorpeus CFS 16',brand:'JOOLA',price:229.99,weight:8.1,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Hybrid',gripLength:5.5,gripCircumference:4.125,power:8,control:9,spin:10,sweetSpot:'Large',playStyle:['Spin','All-Around','Control'],skillLevel:['Intermediate','Advanced','Pro'],features:['Carbon Friction Surface','Propulsion Core','Feel-Flux Technology','Charged Surface'],description:'The Scorpeus introduces next-gen Feel-Flux technology for enhanced feedback and the Propulsion Core for incredible spin potential.',pros:['Maximum spin generation','Great feedback on contact','Versatile shape'],cons:['Spin-focused may take adjustment','Premium price'],color:'#8b4513'},
+      {id:'selkirk-vanguard-power-air-invikta',name:'Vanguard Power Air Invikta',brand:'Selkirk',price:259.99,weight:8.1,coreThickness:16,coreMaterial:'Polypropylene Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Elongated',gripLength:5.25,gripCircumference:4.25,power:9,control:8,spin:9,sweetSpot:'Large',playStyle:['Power','Spin','Aggressive'],skillLevel:['Advanced','Pro'],features:['ProSpin+ Texture','Air Dynamic Throat','Flexfoam Perimeter','Edgeless Design'],description:'Revolutionary air dynamic throat design reduces drag and increases swing speed. The ProSpin+ texture provides aggressive spin generation for the power player.',pros:['Innovative throat design','Exceptional spin','Great for singles'],cons:['Takes time to adjust to shape','Premium price'],color:'#dc143c'},
+      {id:'selkirk-vanguard-control-air-epic',name:'Vanguard Control Air Epic',brand:'Selkirk',price:259.99,weight:7.8,coreThickness:16,coreMaterial:'Polypropylene Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Standard',gripLength:5.0,gripCircumference:4.25,power:7,control:10,spin:8,sweetSpot:'Extra Large',playStyle:['Control','Touch','Defensive'],skillLevel:['Intermediate','Advanced','Pro'],features:['ProSpin+ Texture','Air Dynamic Throat','QuadFlex Hybrid Face','Edgeless Technology'],description:'The Epic shape provides maximum control and a massive sweet spot, perfect for players who prioritize placement and touch over raw power.',pros:['Maximum control','Huge sweet spot','Forgiving on mishits'],cons:['Less power','Wider body may affect maneuverability'],color:'#4169e1'},
+      {id:'selkirk-amped-epic',name:'AMPED Epic',brand:'Selkirk',price:199.99,weight:8.0,coreThickness:16,coreMaterial:'Polypropylene Honeycomb',surfaceMaterial:'Fiberglass',shape:'Wide Body',gripLength:4.75,gripCircumference:4.25,power:8,control:8,spin:7,sweetSpot:'Extra Large',playStyle:['All-Around','Power'],skillLevel:['Beginner','Intermediate','Advanced'],features:['FiberFlex Face','X5 Honeycomb Core','EdgeSentry Edge Guard'],description:'The AMPED series delivers exceptional power through the FiberFlex fiberglass face while the wide body provides stability and a generous hitting zone.',pros:['Great pop off the face','Very forgiving','Good for all levels'],cons:['Heavier feel','Less spin than carbon options'],color:'#ff6347'},
+      {id:'selkirk-luxx-control-air',name:'LUXX Control Air',brand:'Selkirk',price:279.99,weight:7.9,coreThickness:16,coreMaterial:'Polypropylene Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Standard',gripLength:5.0,gripCircumference:4.0,power:7,control:10,spin:9,sweetSpot:'Large',playStyle:['Control','Touch','Spin'],skillLevel:['Advanced','Pro'],features:['SuperCore Polymer','ProSpin+ Micro Texture','Flexfoam Perimeter','Precision Weighting'],description:"The LUXX line represents Selkirk's premium offering with SuperCore technology for unmatched feel and the refined ProSpin+ surface for consistent spin.",pros:['Premium feel','Exceptional touch','Consistent spin'],cons:['Highest price point','May feel too soft for power players'],color:'#9932cc'},
+      {id:'crbn-1x-power-series',name:'1X Power Series',brand:'CRBN',price:219.99,weight:8.2,coreThickness:14,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Raw Carbon',shape:'Elongated',gripLength:5.5,gripCircumference:4.25,power:10,control:7,spin:10,sweetSpot:'Medium',playStyle:['Power','Spin','Aggressive'],skillLevel:['Advanced','Pro'],features:['Raw T700 Carbon Fiber','Unibody Construction','REV Core','Maximum Spin'],description:'The 1X Power Series features raw carbon fiber face without any coating, allowing direct ball contact with carbon for maximum spin potential.',pros:['Incredible spin','Maximum power','Pro-level performance'],cons:['Expensive','Less forgiving','Surface requires care'],color:'#1c1c1c'},
+      {id:'crbn-2x-power-series',name:'2X Power Series',brand:'CRBN',price:219.99,weight:8.0,coreThickness:14,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Raw Carbon',shape:'Hybrid',gripLength:5.25,gripCircumference:4.25,power:9,control:8,spin:10,sweetSpot:'Large',playStyle:['Spin','All-Around','Power'],skillLevel:['Intermediate','Advanced','Pro'],features:['Raw T700 Carbon Fiber','REV Core','Widened Shape','Balanced Feel'],description:'The 2X offers a wider face for a larger sweet spot while maintaining the raw carbon spin benefits of the CRBN series.',pros:['Great spin','Larger sweet spot than 1X','Balanced performance'],cons:['Premium price','Raw carbon needs maintenance'],color:'#2d2d2d'},
+      {id:'crbn-3x-power-series',name:'3X Power Series',brand:'CRBN',price:219.99,weight:7.9,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Raw Carbon',shape:'Wide Body',gripLength:5.0,gripCircumference:4.25,power:8,control:9,spin:10,sweetSpot:'Extra Large',playStyle:['Control','Spin','All-Around'],skillLevel:['Intermediate','Advanced','Pro'],features:['Raw T700 Carbon Fiber','REV Core','Thicker Core','Maximum Sweet Spot'],description:'The widest CRBN paddle with a thicker core for maximum control while still delivering the signature raw carbon spin.',pros:['Maximum spin with control','Huge sweet spot','Forgiving'],cons:['Less power','Premium price'],color:'#3d3d3d'},
+      {id:'engage-pursuit-pro-mx',name:'Pursuit Pro MX',brand:'Engage',price:219.99,weight:8.0,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Hybrid',gripLength:5.0,gripCircumference:4.0,power:8,control:9,spin:9,sweetSpot:'Large',playStyle:['All-Around','Control','Spin'],skillLevel:['Intermediate','Advanced','Pro'],features:['ControlPro Technology','Proprietary Skin','Chemical-Etched Surface','Vibration Control'],description:"The Pursuit Pro MX features Engage's proprietary skin technology that provides a textured surface for incredible spin while maintaining excellent control.",pros:['Excellent spin control','Good power-to-control ratio','Comfortable grip'],cons:['Surface texture wears over time','Mid-high price point'],color:'#228b22'},
+      {id:'engage-pursuit-pro-ex',name:'Pursuit Pro EX',brand:'Engage',price:219.99,weight:8.3,coreThickness:14,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Elongated',gripLength:5.5,gripCircumference:4.0,power:9,control:7,spin:9,sweetSpot:'Medium',playStyle:['Power','Spin','Aggressive'],skillLevel:['Advanced','Pro'],features:['Extended Handle','ControlPro Technology','Thinner Core','Maximum Reach'],description:'The EX version brings extended length for reach and power, with the thinner core adding extra pop for aggressive play styles.',pros:['Maximum reach','Great two-handed backhand support','Powerful pop'],cons:['Less control','Smaller sweet spot'],color:'#2e8b57'},
+      {id:'paddletek-bantam-ex-l-pro',name:'Bantam EX-L Pro',brand:'Paddletek',price:189.99,weight:8.1,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Graphite',shape:'Standard',gripLength:5.25,gripCircumference:4.25,power:7,control:9,spin:7,sweetSpot:'Large',playStyle:['Control','Touch','Defensive'],skillLevel:['Intermediate','Advanced','Pro'],features:['Smart Response Technology','PolyCore','Tour Grip'],description:'The Bantam EX-L Pro is favored by control-oriented players who value consistency and touch at the net.',pros:['Excellent control','Consistent feel','Quiet paddle'],cons:['Less power','Less spin than textured paddles'],color:'#4682b4'},
+      {id:'paddletek-tempest-wave-pro',name:'Tempest Wave Pro',brand:'Paddletek',price:179.99,weight:7.9,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Graphite',shape:'Wide Body',gripLength:4.75,gripCircumference:4.25,power:8,control:8,spin:6,sweetSpot:'Extra Large',playStyle:['All-Around','Power'],skillLevel:['Beginner','Intermediate','Advanced'],features:['Tempest Shock Guard','Wide Body Design','PolyCore'],description:'The wide body design and shock guard make this an excellent choice for players seeking stability and power in their game.',pros:['Very forgiving','Good power','Comfortable'],cons:['Limited spin','Less maneuverable'],color:'#5f9ea0'},
+      {id:'head-radical-elite',name:'Radical Elite',brand:'HEAD',price:189.99,weight:8.1,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Standard',gripLength:5.0,gripCircumference:4.25,power:8,control:8,spin:9,sweetSpot:'Large',playStyle:['Spin','All-Around','Power'],skillLevel:['Intermediate','Advanced','Pro'],features:['Extreme Spin Surface','Optimized Sweet Spot','Ergo Grip'],description:'HEAD brings their tennis expertise to pickleball with the Radical Elite, featuring aggressive spin technology.',pros:['Great spin','Tennis-like feel','Well-balanced'],cons:['Can feel heavy','Less touch'],color:'#ff4500'},
+      {id:'head-gravity-tour',name:'Gravity Tour',brand:'HEAD',price:199.99,weight:8.3,coreThickness:14,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Elongated',gripLength:5.5,gripCircumference:4.0,power:9,control:7,spin:8,sweetSpot:'Medium',playStyle:['Power','Aggressive','Spin'],skillLevel:['Advanced','Pro'],features:['Graphene 360+','Spin Grommets','Extended Handle'],description:"The Gravity Tour brings HEAD's Graphene technology for optimal energy transfer and power.",pros:['Excellent power','Advanced technology','Great reach'],cons:['Less forgiving','Requires good technique'],color:'#dc143c'},
+      {id:'gearbox-cx14e',name:'CX14E Elongated',brand:'Gearbox',price:249.99,weight:8.0,coreThickness:14,coreMaterial:'Carbon Fiber Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Elongated',gripLength:5.75,gripCircumference:3.5,power:9,control:8,spin:8,sweetSpot:'Medium',playStyle:['Power','Control','Aggressive'],skillLevel:['Advanced','Pro'],features:['Solid Span Technology','No Honeycomb Core','Unibody Construction','Small Grip'],description:'Revolutionary no-honeycomb design using Solid Span Technology creates a consistent, predictable response across the entire face.',pros:['Consistent response','Unique feel','Excellent for tennis converts'],cons:['Different feel than traditional paddles','Small grip may not suit everyone'],color:'#8b0000'},
+      {id:'onix-evoke-premier',name:'Evoke Premier',brand:'Onix',price:149.99,weight:7.8,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Composite',shape:'Wide Body',gripLength:4.75,gripCircumference:4.25,power:7,control:8,spin:7,sweetSpot:'Extra Large',playStyle:['All-Around','Control','Defensive'],skillLevel:['Beginner','Intermediate'],features:['Wide Body Shape','DF Composite Face','Nomex/PP Blend Core'],description:'The Evoke Premier is perfect for beginners and intermediate players seeking a forgiving paddle with solid all-around performance.',pros:['Very forgiving','Great for beginners','Good value'],cons:['Not for power players','Limited spin'],color:'#32cd32'},
+      {id:'onix-z5-graphite',name:'Z5 Graphite',brand:'Onix',price:109.99,weight:7.5,coreThickness:14,coreMaterial:'Nomex Honeycomb',surfaceMaterial:'Graphite',shape:'Wide Body',gripLength:4.5,gripCircumference:4.25,power:8,control:7,spin:6,sweetSpot:'Large',playStyle:['Power','All-Around'],skillLevel:['Beginner','Intermediate'],features:['Nomex Core','Graphite Face','Wide Body Design'],description:'A classic paddle that has introduced countless players to pickleball. The Z5 offers reliable power with a tried-and-true design.',pros:['Proven design','Good power','Affordable'],cons:['Older technology','Less spin','Can be loud'],color:'#228b22'},
+      {id:'gamma-hellbender',name:'Hellbender',brand:'Gamma',price:169.99,weight:8.0,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Graphite',shape:'Standard',gripLength:4.875,gripCircumference:4.0,power:7,control:9,spin:8,sweetSpot:'Large',playStyle:['Control','Touch','All-Around'],skillLevel:['Intermediate','Advanced'],features:['Sensa Poly Core','Textured Graphite','Honeycomb Cushion Grip'],description:"The Hellbender focuses on control and feel with Gamma's Sensa Poly Core technology.",pros:['Excellent control','Good feel','Comfortable grip'],cons:['Average power','Not flashy'],color:'#8b4513'},
+      {id:'gamma-needle',name:'Needle',brand:'Gamma',price:189.99,weight:7.6,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Elongated',gripLength:5.5,gripCircumference:4.0,power:8,control:8,spin:9,sweetSpot:'Medium',playStyle:['Spin','Power','Aggressive'],skillLevel:['Intermediate','Advanced','Pro'],features:['Toray T700 Carbon','Extended Length','Textured Surface'],description:'The Needle combines extended reach with premium Toray carbon for maximum spin and power potential.',pros:['Great reach','Excellent spin','Light weight'],cons:['Smaller sweet spot','Less forgiving'],color:'#a0522d'},
+      {id:'diadem-warrior-v2',name:'Warrior V2',brand:'Diadem',price:199.99,weight:8.1,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Standard',gripLength:5.25,gripCircumference:4.0,power:8,control:8,spin:9,sweetSpot:'Large',playStyle:['All-Around','Spin','Power'],skillLevel:['Intermediate','Advanced','Pro'],features:['DURA Surface','PowerCore','Spin Texture Technology'],description:'The Warrior V2 brings enhanced spin technology and a powerful core for aggressive all-court play.',pros:['Great spin','Good power','Durable'],cons:['Can feel stiff','Average control'],color:'#00ced1'},
+      {id:'diadem-icon-v2',name:'Icon V2',brand:'Diadem',price:229.99,weight:7.9,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Elongated',gripLength:5.5,gripCircumference:4.0,power:9,control:7,spin:9,sweetSpot:'Medium',playStyle:['Power','Spin','Aggressive'],skillLevel:['Advanced','Pro'],features:['Extended Handle','DURA Surface','Tour Core'],description:'The Icon V2 is designed for power players who need extra reach and leverage for devastating groundstrokes.',pros:['Excellent reach','Great for two-handed backhands','Powerful'],cons:['Smaller sweet spot','Less forgiving'],color:'#20b2aa'},
+      {id:'electrum-model-e-elite',name:'Model E Elite',brand:'Electrum',price:199.99,weight:8.0,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Standard',gripLength:5.0,gripCircumference:4.125,power:8,control:9,spin:8,sweetSpot:'Large',playStyle:['All-Around','Control','Spin'],skillLevel:['Intermediate','Advanced','Pro'],features:['Spin-Optimized Texture','Precision Balanced','Tour-Grade Core'],description:'The Model E Elite delivers professional-grade performance with a focus on spin and control for competitive players.',pros:['Well-balanced','Good spin','Solid construction'],cons:['Not the most powerful','Mid-range everything'],color:'#ffd700'},
+      {id:'vulcan-v730-power',name:'V730 Power',brand:'Vulcan',price:159.99,weight:8.4,coreThickness:14,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Elongated',gripLength:5.5,gripCircumference:4.25,power:10,control:6,spin:8,sweetSpot:'Medium',playStyle:['Power','Aggressive'],skillLevel:['Intermediate','Advanced'],features:['MaxSpin Texture','Power Core','Extended Handle'],description:'Built for players who want maximum power, the V730 delivers explosive shots with a heavier, power-focused design.',pros:['Maximum power','Good spin','Extended reach'],cons:['Less control','Heavy for some'],color:'#b22222'},
+      {id:'vulcan-v520-control',name:'V520 Control',brand:'Vulcan',price:149.99,weight:7.8,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Graphite',shape:'Standard',gripLength:5.0,gripCircumference:4.125,power:7,control:9,spin:7,sweetSpot:'Large',playStyle:['Control','Touch','Defensive'],skillLevel:['Beginner','Intermediate','Advanced'],features:['Control Core','Graphite Surface','Comfort Grip'],description:'The V520 prioritizes control and touch for players who value placement over power.',pros:['Excellent control','Forgiving','Good value'],cons:['Less power','Basic spin'],color:'#cd5c5c'},
+      {id:'prokennex-pro-flight',name:'Pro Flight',brand:'ProKennex',price:179.99,weight:7.7,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Elongated',gripLength:5.5,gripCircumference:4.0,power:8,control:8,spin:8,sweetSpot:'Large',playStyle:['All-Around','Power','Spin'],skillLevel:['Intermediate','Advanced'],features:['Kinetic System','Vibration Dampening','Carbon Surface'],description:"Featuring ProKennex's signature Kinetic System, this paddle reduces vibration and arm stress while delivering consistent performance.",pros:['Arm-friendly','Good balance','Reduced vibration'],cons:['Unique feel takes adjustment','Less poppy'],color:'#0000cd'},
+      {id:'six-zero-double-black-diamond-control',name:'Double Black Diamond Control',brand:'Six Zero',price:229.99,weight:7.9,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Standard',gripLength:5.25,gripCircumference:4.0,power:7,control:10,spin:9,sweetSpot:'Large',playStyle:['Control','Touch','Spin'],skillLevel:['Advanced','Pro'],features:['Kevlar Edge Guard','ControlFlex Core','Premium Carbon'],description:'The Double Black Diamond Control is designed for players who demand precision and consistency in every shot.',pros:['Exceptional control','Great feel','Premium construction'],cons:['Less power','High price point'],color:'#000000'},
+      {id:'six-zero-double-black-diamond-power',name:'Double Black Diamond Power',brand:'Six Zero',price:229.99,weight:8.2,coreThickness:14,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Elongated',gripLength:5.5,gripCircumference:4.0,power:10,control:7,spin:9,sweetSpot:'Medium',playStyle:['Power','Spin','Aggressive'],skillLevel:['Advanced','Pro'],features:['Kevlar Edge Guard','PowerFlex Core','Extended Handle'],description:'The power variant delivers explosive performance for aggressive players who want to dominate from the baseline.',pros:['Extreme power','Great spin','Premium feel'],cons:['Less forgiving','High price'],color:'#1a1a1a'},
+      {id:'ronbus-r1-nova',name:'R1 Nova',brand:'Ronbus',price:159.99,weight:7.8,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Toray Carbon',shape:'Hybrid',gripLength:5.0,gripCircumference:4.125,power:8,control:8,spin:9,sweetSpot:'Large',playStyle:['All-Around','Spin','Control'],skillLevel:['Intermediate','Advanced'],features:['Toray T700 Carbon','Textured Surface','Balanced Design'],description:'The R1 Nova offers premium performance at a mid-range price, featuring high-quality Toray carbon.',pros:['Great value','Good spin','Well-balanced'],cons:['Less known brand','Basic edge guard'],color:'#7b68ee'},
+      {id:'vatic-pro-prism-flash',name:'Prism Flash 16',brand:'Vatic Pro',price:179.99,weight:8.0,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'T700 Carbon',shape:'Elongated',gripLength:5.5,gripCircumference:4.0,power:8,control:9,spin:9,sweetSpot:'Large',playStyle:['Control','Spin','All-Around'],skillLevel:['Intermediate','Advanced','Pro'],features:['Unibody Design','Thermoformed Construction','T700 Carbon'],description:'The Prism Flash features innovative thermoformed construction for incredible feel and spin at a competitive price.',pros:['Great value','Excellent spin','Modern construction'],cons:['Newer brand','May dead after heavy use'],color:'#ee82ee'},
+      {id:'bread-butter-filth',name:'Filth',brand:'Bread & Butter',price:189.99,weight:8.0,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Raw Carbon',shape:'Standard',gripLength:5.0,gripCircumference:4.125,power:8,control:8,spin:10,sweetSpot:'Large',playStyle:['Spin','All-Around','Control'],skillLevel:['Intermediate','Advanced','Pro'],features:['Raw Toray Carbon','Spin Optimized','Premium Core'],description:'The Filth is all about spin, featuring a raw carbon surface that grips the ball for maximum rotation.',pros:['Incredible spin','Good control','Well-balanced'],cons:['Newer brand','Raw surface wears'],color:'#deb887'},
+      {id:'wilson-juice-tour',name:'Juice Tour',brand:'Wilson',price:179.99,weight:7.8,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Standard',gripLength:5.0,gripCircumference:4.25,power:8,control:8,spin:8,sweetSpot:'Large',playStyle:['All-Around','Power','Spin'],skillLevel:['Intermediate','Advanced'],features:['Spin Effect Technology','Boost Sensor','Power System'],description:'Wilson brings their tennis heritage to pickleball with a well-engineered paddle for competitive players.',pros:['Trusted brand','Good spin','Tennis-like feel'],cons:['Conservative design','Not specialized'],color:'#ff0000'},
+      {id:'babolat-rbel-touch',name:'RBEL Touch',brand:'Babolat',price:189.99,weight:7.9,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Standard',gripLength:5.0,gripCircumference:4.125,power:7,control:10,spin:8,sweetSpot:'Large',playStyle:['Control','Touch','Defensive'],skillLevel:['Intermediate','Advanced','Pro'],features:['Cortex Dampening','Woofer System','Carbon Blend'],description:'Babolat brings French racquet expertise to pickleball with a focus on feel and control.',pros:['Exceptional feel','Great dampening','Premium quality'],cons:['Less power','Higher price'],color:'#ffcc00'},
+      {id:'yonex-ezone',name:'EZONE',brand:'Yonex',price:199.99,weight:8.0,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Graphite',shape:'Standard',gripLength:5.0,gripCircumference:4.0,power:8,control:9,spin:7,sweetSpot:'Large',playStyle:['Control','All-Around'],skillLevel:['Intermediate','Advanced','Pro'],features:['Isometric Head Shape','Vibration Dampening','Aero Frame'],description:'Yonex applies their legendary badminton and tennis technology to create a precision-focused paddle.',pros:['Excellent quality','Great control','Premium feel'],cons:['Less spin than competitors','Traditional feel'],color:'#0066cc'},
+      {id:'slk-halo-control-xl',name:'Halo Control XL',brand:'SLK',price:119.99,weight:7.9,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Graphite',shape:'Wide Body',gripLength:5.0,gripCircumference:4.125,power:7,control:8,spin:7,sweetSpot:'Extra Large',playStyle:['Control','All-Around','Defensive'],skillLevel:['Beginner','Intermediate'],features:['G6 Graphite Face','Rev-Core','Wide Design'],description:"Part of Selkirk's SLK line, the Halo Control XL offers great value with a focus on control and a large sweet spot.",pros:['Great value','Very forgiving','Good for beginners'],cons:['Not tour-level','Limited power'],color:'#ff69b4'},
+      {id:'slk-halo-power-xl',name:'Halo Power XL',brand:'SLK',price:119.99,weight:8.2,coreThickness:14,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Fiberglass',shape:'Wide Body',gripLength:5.0,gripCircumference:4.125,power:9,control:6,spin:6,sweetSpot:'Large',playStyle:['Power','Aggressive'],skillLevel:['Beginner','Intermediate'],features:['Fiberglass Face','Power Core','Wide Design'],description:'The power-focused version of the Halo line delivers explosive shots at an entry-level price.',pros:['Great power for price','Forgiving shape','Good pop'],cons:['Less control','Basic construction'],color:'#ff1493'},
+      {id:'niupipo-explorer-pro',name:'Explorer Pro',brand:'Niupipo',price:69.99,weight:7.8,coreThickness:14,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Fiberglass',shape:'Standard',gripLength:5.0,gripCircumference:4.25,power:7,control:7,spin:6,sweetSpot:'Large',playStyle:['All-Around','Power'],skillLevel:['Beginner','Intermediate'],features:['Honeycomb Core','Fiberglass Face','Edge Guard'],description:'An excellent budget option for beginners who want solid performance without breaking the bank.',pros:['Great value','Good for beginners','Reliable'],cons:['Basic materials','Limited spin'],color:'#4169e1'},
+      {id:'franklin-ben-johns-signature',name:'Ben Johns Signature',brand:'Franklin',price:129.99,weight:7.9,coreThickness:14,coreMaterial:'Polypropylene Honeycomb',surfaceMaterial:'Fiberglass',shape:'Standard',gripLength:4.75,gripCircumference:4.25,power:8,control:7,spin:7,sweetSpot:'Large',playStyle:['All-Around','Power'],skillLevel:['Beginner','Intermediate'],features:['MaxGrit Surface','X-40 Approved','Comfort Grip'],description:'An accessible signature paddle endorsed by Ben Johns, designed for recreational players seeking solid performance.',pros:['Good value','All-around performance','Great for beginners'],cons:['Not tour-level','Basic construction'],color:'#ff8c00'},
+      {id:'prince-spectrum-pro',name:'Spectrum Pro',brand:'Prince',price:169.99,weight:7.9,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Standard',gripLength:5.0,gripCircumference:4.25,power:8,control:8,spin:8,sweetSpot:'Large',playStyle:['All-Around','Control','Spin'],skillLevel:['Intermediate','Advanced'],features:['Response Polymer Core','Carbon Face','Precision Grip'],description:'Prince brings their racquet sport expertise to pickleball with a well-balanced paddle for all skill levels.',pros:['Trusted brand','Well-balanced','Consistent'],cons:['Not cutting edge','Average in all areas'],color:'#9400d3'},
+      {id:'legacy-pro',name:'Legacy Pro',brand:'Legacy',price:189.99,weight:8.0,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'T700 Carbon',shape:'Hybrid',gripLength:5.25,gripCircumference:4.0,power:8,control:9,spin:9,sweetSpot:'Large',playStyle:['All-Around','Control','Spin'],skillLevel:['Intermediate','Advanced','Pro'],features:['T700 Carbon Face','Polypro Core','Spin Texture'],description:'The Legacy Pro offers professional-grade performance with a focus on control and spin at an accessible price.',pros:['Great all-around paddle','Good spin','Fair price'],cons:['Newer brand','Less established'],color:'#9370db'},
+      {id:'engage-poach-advantage',name:'Poach Advantage',brand:'Engage',price:179.99,weight:7.8,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Fiberglass',shape:'Standard',gripLength:5.0,gripCircumference:4.25,power:8,control:7,spin:6,sweetSpot:'Large',playStyle:['Power','All-Around'],skillLevel:['Beginner','Intermediate'],features:['PolyCore','Vibration Control System','Composite Face'],description:'A great entry point to Engage paddles, the Poach Advantage offers solid power and a forgiving sweet spot at an accessible price.',pros:['Good value','Forgiving','Solid construction'],cons:['Basic spin generation','Not tour-level'],color:'#3cb371'},
+      {id:'paddletek-ts5-pro',name:'TS5 Pro',brand:'Paddletek',price:159.99,weight:7.7,coreThickness:14,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Fiberglass',shape:'Standard',gripLength:5.0,gripCircumference:4.0,power:9,control:6,spin:5,sweetSpot:'Medium',playStyle:['Power','Aggressive'],skillLevel:['Intermediate','Advanced'],features:['Thin Core Design','Fiberglass Face','Power Pro Grip'],description:'Built for power players, the TS5 Pro features a thin core that delivers explosive pop on drives and smashes.',pros:['Excellent power','Quick at net','Good value'],cons:['Less control','Smaller sweet spot'],color:'#6495ed'},
+      {id:'gearbox-gx6-power',name:'GX6 Power',brand:'Gearbox',price:199.99,weight:8.3,coreThickness:16,coreMaterial:'Carbon Fiber Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Standard',gripLength:5.0,gripCircumference:3.75,power:10,control:6,spin:7,sweetSpot:'Medium',playStyle:['Power','Aggressive'],skillLevel:['Intermediate','Advanced'],features:['Hyper-Bite Spin Technology','Thick Core','Solid Span'],description:'Built for maximum power, the GX6 Power delivers explosive shots with enhanced spin capabilities.',pros:['Maximum power','Good spin','Solid construction'],cons:['Less control','Heavy for some players'],color:'#a52a2a'},
+      {id:'electrum-model-e',name:'Model E',brand:'Electrum',price:159.99,weight:7.8,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Fiberglass',shape:'Standard',gripLength:5.0,gripCircumference:4.125,power:8,control:8,spin:7,sweetSpot:'Large',playStyle:['All-Around','Power'],skillLevel:['Beginner','Intermediate'],features:['Fiberglass Face','Balanced Design','Comfort Grip'],description:'The original Model E offers solid performance at an accessible price point, great for developing players.',pros:['Good value','Balanced','Forgiving'],cons:['Less spin than Elite','Basic features'],color:'#daa520'},
+      {id:'prokennex-kinetic-pro-speed',name:'Kinetic Pro Speed',brand:'ProKennex',price:229.99,weight:7.5,coreThickness:14,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Elongated',gripLength:5.5,gripCircumference:4.0,power:9,control:8,spin:8,sweetSpot:'Medium',playStyle:['Power','Spin','Aggressive'],skillLevel:['Advanced','Pro'],features:['Kinetic System','Speed Frame','Carbon Face'],description:'The lightest pro-level paddle from ProKennex, designed for quick hands and fast exchanges.',pros:['Incredibly light','Fast swing speed','Arm protection'],cons:['Less mass for power','Smaller sweet spot'],color:'#191970'},
+      {id:'joola-vision-cgs-16',name:'Vision CGS 16',brand:'JOOLA',price:179.99,weight:7.9,coreThickness:16,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Carbon Fiber',shape:'Standard',gripLength:5.0,gripCircumference:4.25,power:7,control:8,spin:8,sweetSpot:'Large',playStyle:['All-Around','Control'],skillLevel:['Beginner','Intermediate','Advanced'],features:['Carbon Grip Surface','Reactive Core','Comfort Grip'],description:'An accessible high-performance paddle that brings pro-level technology to players of all skill levels at a more approachable price point.',pros:['Great value','Forgiving sweet spot','Good for learning'],cons:['Less specialized','Not tour-level performance'],color:'#6b8e23'},
+      {id:'selkirk-amped-invikta',name:'AMPED Invikta',brand:'Selkirk',price:199.99,weight:8.2,coreThickness:16,coreMaterial:'Polypropylene Honeycomb',surfaceMaterial:'Fiberglass',shape:'Elongated',gripLength:5.25,gripCircumference:4.25,power:9,control:7,spin:7,sweetSpot:'Medium',playStyle:['Power','Aggressive'],skillLevel:['Intermediate','Advanced'],features:['FiberFlex Face','Extended Handle','X5 Honeycomb Core'],description:'The elongated Invikta shape provides extra reach and leverage for powerful two-handed backhands while maintaining the AMPED series pop.',pros:['Great reach','Excellent for two-handed backhands','Powerful drives'],cons:['Smaller sweet spot','Requires good technique'],color:'#ff4500'},
+      {id:'prokennex-ovation-flight',name:'Ovation Flight',brand:'ProKennex',price:199.99,weight:8.0,coreThickness:14,coreMaterial:'Polymer Honeycomb',surfaceMaterial:'Graphite',shape:'Standard',gripLength:5.0,gripCircumference:4.125,power:9,control:7,spin:7,sweetSpot:'Medium',playStyle:['Power','Aggressive'],skillLevel:['Intermediate','Advanced'],features:['Kinetic System','Power Core','Graphite Face'],description:'The Ovation Flight is built for power with a thinner core and the arm-protecting Kinetic System.',pros:['Great power','Arm protection','Solid feel'],cons:['Less spin','Smaller sweet spot'],color:'#0000ff'},
+    ];
+
+    const brands = [...new Set(paddles.map(p => p.brand))].sort();
+    const playStyles = ['Power','Control','Spin','All-Around','Touch','Defensive','Aggressive'];
+    const skillLevels = ['Beginner','Intermediate','Advanced','Pro'];
+    const shapes = ['Standard','Elongated','Wide Body','Hybrid'];
+
+    let state = {
+      search: '',
+      sort: 'name',
+      filters: { brands: [], playStyles: [], skillLevels: [], shapes: [] },
+      selectedPaddle: null,
+      showQuiz: false,
+      quizStep: 0,
+      quizAnswers: {},
+      quizResults: null
+    };
+
+    function paddleSVG() {
+      return `<svg viewBox="0 0 60 100"><ellipse cx="30" cy="35" rx="25" ry="32" fill="currentColor" opacity="0.9"/><rect x="24" y="62" width="12" height="28" rx="3" fill="#92400e"/><ellipse cx="30" cy="35" rx="20" ry="27" fill="white" opacity="0.15"/></svg>`;
+    }
+
+    function getFiltered() {
+      let result = paddles.filter(p => {
+        if (state.search) {
+          const q = state.search.toLowerCase();
+          if (!p.name.toLowerCase().includes(q) && !p.brand.toLowerCase().includes(q)) return false;
+        }
+        if (state.filters.brands.length && !state.filters.brands.includes(p.brand)) return false;
+        if (state.filters.playStyles.length && !state.filters.playStyles.some(s => p.playStyle.includes(s))) return false;
+        if (state.filters.skillLevels.length && !state.filters.skillLevels.some(s => p.skillLevel.includes(s))) return false;
+        if (state.filters.shapes.length && !state.filters.shapes.includes(p.shape)) return false;
+        return true;
+      });
+      result.sort((a, b) => {
+        switch (state.sort) {
+          case 'price-asc': return a.price - b.price;
+          case 'price-desc': return b.price - a.price;
+          case 'power': return b.power - a.power;
+          case 'control': return b.control - a.control;
+          case 'spin': return b.spin - a.spin;
+          default: return a.name.localeCompare(b.name);
+        }
+      });
+      return result;
+    }
+
+    function toggleFilter(type, value) {
+      const arr = state.filters[type];
+      const idx = arr.indexOf(value);
+      if (idx === -1) arr.push(value); else arr.splice(idx, 1);
+      render();
+    }
+
+    function resetFilters() {
+      state.filters = { brands: [], playStyles: [], skillLevels: [], shapes: [] };
+      render();
+    }
+
+    function renderCard(p) {
+      return `<div class="card" onclick="state.selectedPaddle='${p.id}';render()">
+        <div class="card-img" style="background:${p.color}">${paddleSVG()}<span class="brand-tag">${p.brand}</span></div>
+        <div class="card-info">
+          <div class="card-name">${p.name}</div>
+          <div class="card-price">$${p.price.toFixed(2)}</div>
+          <div class="stats">
+            <div class="stat"><span class="stat-label">Power</span><div class="stat-bar"><div class="stat-fill power" style="width:${p.power*10}%"></div></div><span class="stat-val">${p.power}</span></div>
+            <div class="stat"><span class="stat-label">Control</span><div class="stat-bar"><div class="stat-fill control" style="width:${p.control*10}%"></div></div><span class="stat-val">${p.control}</span></div>
+            <div class="stat"><span class="stat-label">Spin</span><div class="stat-bar"><div class="stat-fill spin" style="width:${p.spin*10}%"></div></div><span class="stat-val">${p.spin}</span></div>
+          </div>
+          <div class="tags">${p.playStyle.slice(0,3).map(s=>`<span class="tag">${s}</span>`).join('')}</div>
+          <div class="specs"><span>${p.weight}oz</span><span>${p.shape}</span><span>${p.coreThickness}mm</span></div>
+        </div>
+      </div>`;
+    }
+
+    function renderModal(p) {
+      return `<div class="modal-overlay" onclick="state.selectedPaddle=null;render()">
+        <div class="modal" onclick="event.stopPropagation()">
+          <button class="modal-close" onclick="state.selectedPaddle=null;render()">&times;</button>
+          <div class="modal-header">
+            <div class="modal-img" style="background:${p.color}">${paddleSVG()}</div>
+            <div class="modal-title">
+              <span class="modal-brand">${p.brand}</span>
+              <h2>${p.name}</h2>
+              <div class="modal-price">$${p.price.toFixed(2)}</div>
+            </div>
+          </div>
+          <div class="modal-body">
+            <p class="modal-desc">${p.description}</p>
+            <div class="modal-section">
+              <h3>Performance</h3>
+              <div class="stats-grid">
+                <div class="stat-row"><span class="stat-name">Power</span><div class="stat-bar-lg"><div class="stat-fill power" style="width:${p.power*10}%"></div></div><span class="stat-num">${p.power}/10</span></div>
+                <div class="stat-row"><span class="stat-name">Control</span><div class="stat-bar-lg"><div class="stat-fill control" style="width:${p.control*10}%"></div></div><span class="stat-num">${p.control}/10</span></div>
+                <div class="stat-row"><span class="stat-name">Spin</span><div class="stat-bar-lg"><div class="stat-fill spin" style="width:${p.spin*10}%"></div></div><span class="stat-num">${p.spin}/10</span></div>
+              </div>
+            </div>
+            <div class="modal-section">
+              <h3>Specifications</h3>
+              <div class="specs-grid">
+                <div class="spec-item"><span class="spec-label">Weight</span><span class="spec-value">${p.weight} oz</span></div>
+                <div class="spec-item"><span class="spec-label">Core Thickness</span><span class="spec-value">${p.coreThickness}mm</span></div>
+                <div class="spec-item"><span class="spec-label">Core Material</span><span class="spec-value">${p.coreMaterial}</span></div>
+                <div class="spec-item"><span class="spec-label">Surface</span><span class="spec-value">${p.surfaceMaterial}</span></div>
+                <div class="spec-item"><span class="spec-label">Shape</span><span class="spec-value">${p.shape}</span></div>
+                <div class="spec-item"><span class="spec-label">Grip Length</span><span class="spec-value">${p.gripLength}"</span></div>
+                <div class="spec-item"><span class="spec-label">Grip Circ.</span><span class="spec-value">${p.gripCircumference}"</span></div>
+                <div class="spec-item"><span class="spec-label">Sweet Spot</span><span class="spec-value">${p.sweetSpot}</span></div>
+              </div>
+            </div>
+            <div class="modal-section">
+              <h3>Play Styles</h3>
+              <div class="tags-lg">${p.playStyle.map(s=>`<span class="tag-lg">${s}</span>`).join('')}</div>
+            </div>
+            <div class="modal-section">
+              <h3>Skill Levels</h3>
+              <div class="tags-lg">${p.skillLevel.map(s=>`<span class="tag-lg tag-skill">${s}</span>`).join('')}</div>
+            </div>
+            <div class="modal-section">
+              <h3>Features</h3>
+              <ul class="features-list">${p.features.map(f=>`<li>${f}</li>`).join('')}</ul>
+            </div>
+            <div class="modal-section pros-cons">
+              <div class="pros"><h3>Pros</h3><ul>${p.pros.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+              <div class="cons"><h3>Cons</h3><ul>${p.cons.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    const quizSteps = [
+      {q:"What's your skill level?",key:'skill',opts:[{v:'Beginner',l:'Beginner',d:'New to pickleball'},{v:'Intermediate',l:'Intermediate',d:'Know rules, can rally'},{v:'Advanced',l:'Advanced',d:'Strong technique'},{v:'Pro',l:'Pro/Tournament',d:'Competitive player'}]},
+      {q:"How do you like to play?",key:'style',opts:[{v:'Power',l:'Power Player',d:'Hit hard, dominate'},{v:'Control',l:'Control Player',d:'Precision and placement'},{v:'Spin',l:'Spin Player',d:'Add spin to shots'},{v:'All-Around',l:'All-Around',d:'Balanced approach'}]},
+      {q:"What's most important?",key:'priority',opts:[{v:'power',l:'Maximum Power',d:'Put the ball away'},{v:'control',l:'Maximum Control',d:'Touch and placement'},{v:'spin',l:'Maximum Spin',d:'Curve every shot'},{v:'balance',l:'Balance',d:'Well-rounded paddle'}]},
+      {q:"What's your budget?",key:'budget',opts:[{v:'budget',l:'Budget (<$130)',d:'Under $130'},{v:'mid',l:'Mid-Range',d:'$130 - $200'},{v:'premium',l:'Premium',d:'$200+'}]}
+    ];
+
+    function quizAnswer(val) {
+      state.quizAnswers[quizSteps[state.quizStep].key] = val;
+      if (state.quizStep < quizSteps.length - 1) {
+        state.quizStep++;
+      } else {
+        calculateQuiz();
+      }
+      render();
+    }
+
+    function calculateQuiz() {
+      const a = state.quizAnswers;
+      let scored = paddles.map(p => {
+        let score = 0;
+        if (a.skill && p.skillLevel.includes(a.skill)) score += 20;
+        if (a.style && p.playStyle.includes(a.style)) score += 25;
+        if (a.priority === 'power') score += p.power * 3;
+        else if (a.priority === 'control') score += p.control * 3;
+        else if (a.priority === 'spin') score += p.spin * 3;
+        else if (a.priority === 'balance') score += (10 - Math.abs(p.power - p.control) - Math.abs(p.control - p.spin)) * 2;
+        if (a.budget === 'budget' && p.price < 130) score += 15;
+        else if (a.budget === 'mid' && p.price >= 130 && p.price <= 200) score += 15;
+        else if (a.budget === 'premium' && p.price > 200) score += 15;
+        return { p, score };
+      });
+      scored.sort((a, b) => b.score - a.score);
+      state.quizResults = scored.slice(0, 5).map(s => s.p);
+    }
+
+    function renderQuiz() {
+      if (state.quizResults) {
+        return `<div class="modal-overlay" onclick="state.showQuiz=false;state.quizResults=null;state.quizStep=0;state.quizAnswers={};render()">
+          <div class="modal quiz-results" onclick="event.stopPropagation()">
+            <button class="modal-close" onclick="state.showQuiz=false;state.quizResults=null;state.quizStep=0;state.quizAnswers={};render()">&times;</button>
+            <h2>Your Perfect Matches</h2>
+            <p class="quiz-subtitle">Top recommendations based on your preferences:</p>
+            <div class="rec-list">${state.quizResults.map((p,i)=>`
+              <div class="rec-card" onclick="state.showQuiz=false;state.quizResults=null;state.quizStep=0;state.quizAnswers={};state.selectedPaddle='${p.id}';render()">
+                <div class="rec-rank">#${i+1}</div>
+                <div class="rec-img" style="background:${p.color}">${paddleSVG()}</div>
+                <div class="rec-info">
+                  <span class="rec-brand">${p.brand}</span>
+                  <h3>${p.name}</h3>
+                  <span class="rec-price">$${p.price.toFixed(2)}</span>
+                </div>
+                <div class="rec-stats">
+                  <div class="mini-stat"><span>PWR</span><strong>${p.power}</strong></div>
+                  <div class="mini-stat"><span>CTL</span><strong>${p.control}</strong></div>
+                  <div class="mini-stat"><span>SPN</span><strong>${p.spin}</strong></div>
+                </div>
+              </div>
+            `).join('')}</div>
+            <button class="quiz-restart" onclick="state.quizResults=null;state.quizStep=0;state.quizAnswers={};render()">Retake Quiz</button>
+          </div>
+        </div>`;
+      }
+      const step = quizSteps[state.quizStep];
+      return `<div class="modal-overlay" onclick="state.showQuiz=false;state.quizStep=0;state.quizAnswers={};render()">
+        <div class="modal quiz-modal" onclick="event.stopPropagation()">
+          <button class="modal-close" onclick="state.showQuiz=false;state.quizStep=0;state.quizAnswers={};render()">&times;</button>
+          <div class="quiz-progress">${quizSteps.map((_,i)=>`<div class="progress-dot ${i===state.quizStep?'active':''} ${i<state.quizStep?'done':''}"></div>`).join('')}</div>
+          <h2>${step.q}</h2>
+          <div class="quiz-options">${step.opts.map(o=>`<button class="quiz-opt" onclick="quizAnswer('${o.v}')"><span class="opt-label">${o.l}</span><span class="opt-desc">${o.d}</span></button>`).join('')}</div>
+          ${state.quizStep > 0 ? `<button class="quiz-back" onclick="state.quizStep--;render()">← Back</button>` : ''}
+        </div>
+      </div>`;
+    }
+
+    function render() {
+      const filtered = getFiltered();
+      const selected = state.selectedPaddle ? paddles.find(p => p.id === state.selectedPaddle) : null;
+
+      document.getElementById('app').innerHTML = `
+        <header class="header">
+          <h1>🏓 Pickleball Paddle Selector</h1>
+          <p class="tagline">Find your perfect paddle from ${paddles.length}+ options</p>
+        </header>
+        <div class="toolbar">
+          <input class="search-input" type="text" placeholder="Search paddles..." value="${state.search}" oninput="state.search=this.value;render()">
+          <button class="quiz-btn" onclick="state.showQuiz=true;render()">? Find My Paddle</button>
+          <select onchange="state.sort=this.value;render()">
+            <option value="name" ${state.sort==='name'?'selected':''}>Name</option>
+            <option value="price-asc" ${state.sort==='price-asc'?'selected':''}>Price: Low→High</option>
+            <option value="price-desc" ${state.sort==='price-desc'?'selected':''}>Price: High→Low</option>
+            <option value="power" ${state.sort==='power'?'selected':''}>Power</option>
+            <option value="control" ${state.sort==='control'?'selected':''}>Control</option>
+            <option value="spin" ${state.sort==='spin'?'selected':''}>Spin</option>
+          </select>
+        </div>
+        <main class="main">
+          <aside class="sidebar">
+            <div class="filter-panel">
+              <div class="filter-header"><h2>Filters</h2><button class="reset-btn" onclick="resetFilters()">Reset</button></div>
+              <div class="filter-section">
+                <h3>Skill Level</h3>
+                <div class="checkbox-group">${skillLevels.map(s=>`<label class="checkbox-label"><input type="checkbox" ${state.filters.skillLevels.includes(s)?'checked':''} onchange="toggleFilter('skillLevels','${s}')">${s}</label>`).join('')}</div>
+              </div>
+              <div class="filter-section">
+                <h3>Play Style</h3>
+                <div class="checkbox-group">${playStyles.map(s=>`<label class="checkbox-label"><input type="checkbox" ${state.filters.playStyles.includes(s)?'checked':''} onchange="toggleFilter('playStyles','${s}')">${s}</label>`).join('')}</div>
+              </div>
+              <div class="filter-section">
+                <h3>Brand</h3>
+                <div class="checkbox-group">${brands.map(b=>`<label class="checkbox-label"><input type="checkbox" ${state.filters.brands.includes(b)?'checked':''} onchange="toggleFilter('brands','${b}')">${b}</label>`).join('')}</div>
+              </div>
+              <div class="filter-section">
+                <h3>Shape</h3>
+                <div class="checkbox-group">${shapes.map(s=>`<label class="checkbox-label"><input type="checkbox" ${state.filters.shapes.includes(s)?'checked':''} onchange="toggleFilter('shapes','${s}')">${s}</label>`).join('')}</div>
+              </div>
+            </div>
+          </aside>
+          <section class="content">
+            <div class="results-count">Showing ${filtered.length} of ${paddles.length} paddles</div>
+            ${filtered.length ? `<div class="grid">${filtered.map(renderCard).join('')}</div>` : '<div class="no-results"><p>No paddles match your filters.</p><button onclick="resetFilters()">Reset Filters</button></div>'}
+          </section>
+        </main>
+        ${selected ? renderModal(selected) : ''}
+        ${state.showQuiz ? renderQuiz() : ''}
+      `;
+    }
+
+    render();
+  </script>
+</body>
+</html>
